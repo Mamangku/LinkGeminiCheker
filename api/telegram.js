@@ -1,17 +1,8 @@
 import { waitUntil } from "@vercel/functions";
 import { getSupabase } from "../lib/supabase.js";
-import {
-  editMessage,
-  getTelegramTextFile,
-  sendMessage
-} from "../lib/telegram.js";
-import {
-  extractLinks,
-  getLimits,
-  mapConcurrent,
-  checkRedeemLink,
-  summarize
-} from "../lib/checker.js";
+import { editMessage, getTelegramTextFile, sendMessage } from "../lib/telegram.js";
+import { extractLinks, getLimits, summarize } from "../lib/checker.js";
+import { checkRedeemLinks, ENGINE_VERSION } from "../lib/public-checker.js";
 
 function htmlEscape(value = "") {
   return String(value)
@@ -32,23 +23,29 @@ function formatSummary(s) {
   ].join("\n");
 }
 
+function formatDebug(results) {
+  return results.slice(0, 10).map((item, index) => {
+    const code = item.code ? ` <code>${htmlEscape(item.code)}</code>` : "";
+    const confidence = item.confidence ? ` · ${htmlEscape(item.confidence)}` : "";
+    const signals = Array.isArray(item.evidence?.signals) && item.evidence.signals.length
+      ? `\n   Signals: <code>${htmlEscape(item.evidence.signals.join(", "))}</code>`
+      : "";
+    return `${index + 1}. <b>${String(item.status || "error").toUpperCase()}</b>${code}${confidence}\n   ${htmlEscape(item.reason || "-")}${signals}`;
+  }).join("\n\n");
+}
+
 async function upsertUser(from) {
   if (!from?.id) return;
   const supabase = getSupabase();
-
   const { error } = await supabase
     .from("gemini_checker_users")
-    .upsert(
-      {
-        telegram_user_id: from.id,
-        username: from.username || null,
-        first_name: from.first_name || null,
-        last_name: from.last_name || null,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "telegram_user_id" }
-    );
-
+    .upsert({
+      telegram_user_id: from.id,
+      username: from.username || null,
+      first_name: from.first_name || null,
+      last_name: from.last_name || null,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "telegram_user_id" });
   if (error) throw error;
 }
 
@@ -73,13 +70,10 @@ async function saveCheck({ from, inputType, results, durationMs }) {
     .limit(1);
 
   if (error) throw error;
-
   const checkId = rows?.[0]?.id;
   if (!checkId) return;
 
-  const saveRaw = String(process.env.SAVE_RAW_LINKS || "")
-    .toLowerCase() === "true";
-
+  const saveRaw = String(process.env.SAVE_RAW_LINKS || "").toLowerCase() === "true";
   const payload = results.map((item, index) => ({
     check_id: checkId,
     position: index + 1,
@@ -89,13 +83,13 @@ async function saveCheck({ from, inputType, results, durationMs }) {
     reason: item.reason || null,
     http_status: item.httpStatus ?? null,
     final_url: item.finalUrl || null,
-    duration_ms: item.durationMs ?? null
+    duration_ms: item.durationMs ?? null,
+    engine: item.engine || ENGINE_VERSION,
+    confidence: item.confidence || null,
+    evidence: item.evidence || null
   }));
 
-  const { error: itemError } = await supabase
-    .from("gemini_checker_items")
-    .insert(payload);
-
+  const { error: itemError } = await supabase.from("gemini_checker_items").insert(payload);
   if (itemError) throw itemError;
 }
 
@@ -103,47 +97,39 @@ async function readInput(message) {
   if (message?.document) {
     const name = String(message.document.file_name || "").toLowerCase();
     const mime = String(message.document.mime_type || "").toLowerCase();
-
     if (!name.endsWith(".txt") && mime !== "text/plain") {
-      return {
-        error:
-          "❌ Kirim file <b>.txt</b> yang berisi link, atau kirim link langsung ke bot."
-      };
+      return { error: "❌ Kirim file <b>.txt</b> yang berisi link, atau kirim link langsung ke bot." };
     }
-
-    const text = await getTelegramTextFile(message.document.file_id);
-    return { text, inputType: "txt" };
+    return { text: await getTelegramTextFile(message.document.file_id), inputType: "txt" };
   }
 
-  if (message?.text) {
-    return { text: message.text, inputType: "text" };
-  }
-
-  return {
-    error:
-      "❌ Kirim link redeem Gemini/Google One atau file <b>.txt</b> yang berisi link."
-  };
+  if (message?.text) return { text: message.text, inputType: "text" };
+  return { error: "❌ Kirim link redeem Gemini/Google One atau file <b>.txt</b> yang berisi link." };
 }
 
 async function handleMessage(message) {
   const chatId = message.chat?.id;
   const from = message.from;
-
   if (!chatId) return;
 
-  if (message.text === "/start") {
+  const text = String(message.text || "");
+  const debugMode = /^\/debug(?:@\w+)?\b/i.test(text);
+
+  if (/^\/start(?:@\w+)?$/i.test(text)) {
     await upsertUser(from);
-    await sendMessage(
-      chatId,
-      [
-        "👋 <b>Gemini Redeem Link Checker</b>",
-        "",
-        "Kirim satu atau banyak link redeem Gemini/Google One.",
-        "Kamu juga bisa mengirim file <b>.txt</b> berisi link.",
-        "",
-        "Bot hanya mengecek halaman/redirect dan <b>tidak melakukan redeem</b>."
-      ].join("\n")
-    );
+    await sendMessage(chatId, [
+      "👋 <b>Gemini Redeem Link Checker</b>",
+      "",
+      "Kirim satu/banyak link referral Gemini atau file <b>.txt</b>.",
+      "Bot memakai HTTP + Chromium anonim dan <b>tidak login, tidak memakai cookie, dan tidak melakukan redeem</b>.",
+      "",
+      `Engine: <code>${ENGINE_VERSION}</code>`
+    ].join("\n"));
+    return;
+  }
+
+  if (/^\/engine(?:@\w+)?$/i.test(text)) {
+    await sendMessage(chatId, `⚙️ Engine aktif: <code>${ENGINE_VERSION}</code>\nTidak memakai GOOGLE_CHECKER_COOKIE_HEADER.`);
     return;
   }
 
@@ -151,10 +137,7 @@ async function handleMessage(message) {
   try {
     input = await readInput(message);
   } catch (error) {
-    await sendMessage(
-      chatId,
-      `💔 Gagal membaca input: <code>${htmlEscape(error.message)}</code>`
-    );
+    await sendMessage(chatId, `💔 Gagal membaca input: <code>${htmlEscape(error.message)}</code>`);
     return;
   }
 
@@ -163,54 +146,33 @@ async function handleMessage(message) {
     return;
   }
 
-  const { maxLinks, concurrency } = getLimits();
+  const { maxLinks } = getLimits();
   const links = extractLinks(input.text);
-
   if (!links.length) {
-    await sendMessage(
-      chatId,
-      "❌ Tidak menemukan link yang bisa diperiksa. Pastikan file/teks berisi URL Google redeem yang lengkap."
-    );
+    await sendMessage(chatId, "❌ Tidak menemukan link referral Gemini/Google One yang dapat diperiksa.");
     return;
   }
-
   if (links.length > maxLinks) {
-    await sendMessage(
-      chatId,
-      `❌ Terlalu banyak link. Maksimal <b>${maxLinks}</b> link per sekali cek.`
-    );
+    await sendMessage(chatId, `❌ Terlalu banyak link. Maksimal <b>${maxLinks}</b> link per sekali cek.`);
     return;
   }
 
   await upsertUser(from);
-
-  const progress = await sendMessage(
-    chatId,
-    `🔎 <b>Checking ${links.length} Links...</b>\nMohon jangan kirim batch yang sama berulang kali.`
-  );
+  const progress = await sendMessage(chatId, `🔎 <b>Checking ${links.length} Links...</b>\nEngine v3 sedang membaca bukti publik Google.`);
 
   const started = Date.now();
-  const results = await mapConcurrent(
-    links,
-    concurrency,
-    link => checkRedeemLink(link)
-  );
+  const results = await checkRedeemLinks(links);
   const elapsed = Date.now() - started;
   const summary = summarize(results);
 
   try {
-    await saveCheck({
-      from,
-      inputType: input.inputType,
-      results,
-      durationMs: elapsed
-    });
+    await saveCheck({ from, inputType: input.inputType, results, durationMs: elapsed });
   } catch (error) {
     console.error("Supabase save failed:", error);
-    // Hasil tetap dikirim walau pencatatan database gagal.
   }
 
-  const output = formatSummary(summary);
+  let output = formatSummary(summary);
+  if (debugMode) output += `\n\n<b>Debug:</b>\n${formatDebug(results)}`;
 
   try {
     await editMessage(chatId, progress.message_id, output);
@@ -221,41 +183,27 @@ async function handleMessage(message) {
 
 async function processUpdate(update) {
   try {
-    if (update?.message) {
-      await handleMessage(update.message);
-    }
+    if (update?.message) await handleMessage(update.message);
   } catch (error) {
     console.error(error);
-
     try {
       const chatId = update?.message?.chat?.id;
-      if (chatId) {
-        await sendMessage(
-          chatId,
-          `💔 Terjadi error server: <code>${htmlEscape(error.message)}</code>`
-        );
-      }
+      if (chatId) await sendMessage(chatId, `💔 Terjadi error server: <code>${htmlEscape(error.message)}</code>`);
     } catch {}
   }
 }
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(200).json({ ok: true, service: "telegram-webhook" });
+    return res.status(200).json({ ok: true, service: "telegram-webhook", engine: ENGINE_VERSION });
   }
 
   const expected = process.env.TELEGRAM_WEBHOOK_SECRET;
   const actual = req.headers["x-telegram-bot-api-secret-token"];
-
   if (expected && actual !== expected) {
     return res.status(401).json({ ok: false, error: "invalid webhook secret" });
   }
 
-  const update = req.body || {};
-
-  // Telegram menerima HTTP 200 segera, sementara pekerjaan tetap hidup
-  // melalui waitUntil sampai selesai atau sampai batas maxDuration Vercel.
-  waitUntil(processUpdate(update));
-
+  waitUntil(processUpdate(req.body || {}));
   return res.status(200).json({ ok: true });
 }

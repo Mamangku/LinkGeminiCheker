@@ -1,184 +1,207 @@
-# Gemini Redeem Checker Bot — Vercel + Supabase
+# Gemini Redeem Checker Bot v3.0 — Public Evidence Engine
 
-Bot Telegram sederhana untuk menerima:
-- satu link,
-- banyak link dalam satu pesan,
-- file `.txt` berisi link,
+Telegram bot untuk mengecek link Google AI Pro / Google One referral dengan **Vercel + Supabase saja**.
 
-lalu membalas ringkasan:
+Tidak ada lagi `GOOGLE_CHECKER_COOKIE_HEADER`, akun checker, password, atau session Google.
+
+Output tetap:
 
 ```text
-✨ Checking Complete: 1 Links
+✨ Checking Complete: 5 Links
 
 ✅ Valid: 1
-🛍 Used: 0
-😵 Expired: 0
-❌ Invalid: 0
-💔 Error: 0
+🛍 Used: 1
+😵 Expired: 1
+❌ Invalid: 1
+💔 Error: 1
 ```
 
-## Penting
+## Cara kerja v3
 
-Checker ini **tidak menekan tombol redeem dan tidak mengklaim offer**.
-Ia hanya melakukan HTTP GET, mengikuti redirect yang masih berada pada
-host Google yang diizinkan, lalu membaca marker respons.
+Untuk setiap link, bot melakukan beberapa probe:
 
-Karena sebagian status Google baru bisa diketahui setelah login,
-`Used` / `Expired` hanya bisa dipastikan bila marker tersebut memang
-muncul pada respons yang dapat dibaca server. Versi strict ini **tidak lagi**
-menganggap redirect ke login Google sebagai `Valid`. Jika Google meminta login
-sebelum mengungkap status offer, hasilnya menjadi `Error` agar tidak menghasilkan
-`Valid` palsu.
+1. resolve link `g.co/g1referral/...` dengan redirect manual;
+2. buka URL canonical `one.google.com/referral/redeem/...` dengan beberapa request publik;
+3. buka halaman yang sama dengan Chromium anonim;
+4. browser memblokir navigasi login Google agar dapat menangkap response publik yang muncul **sebelum login**;
+5. DOM, redirect, HTTP status, dan response Google diklasifikasikan dengan rule berbasis bukti.
 
-## 1. Buat Bot Telegram
+Bot **tidak melakukan redeem**, tidak menekan Subscribe/Get Offer, dan tidak login ke Google.
 
-1. Buka `@BotFather`.
-2. Jalankan `/newbot`.
-3. Simpan token bot.
-4. Jangan kirim token bot ke orang lain.
+### Rule utama
 
-## 2. Siapkan Supabase
+- `Valid`: ada offer referral aktif + tombol/action redeem + benefit referral yang sesuai.
+- `Used`: Google eksplisit mengatakan already redeemed / limit reached.
+- Pesan umum `original offer isn't available` **tidak** dianggap Used secara default karena dapat juga muncul akibat eligibility/region/error Google.
+- `Expired`: Google eksplisit mengatakan expired/ended, HTTP 410, atau deadline yang tertulis sudah lewat.
+- `Invalid`: format kode salah, not found, invalid code, atau HTTP 404.
+- `Error`: Google hanya memberi login gate, eligibility akun/region, anti-bot, rate limit, atau bukti tidak cukup.
 
-1. Buka project Supabase.
-2. Masuk ke **SQL Editor**.
-3. Copy seluruh isi `supabase.sql`.
-4. Klik **Run**.
-5. Ambil:
-   - `Project URL`
-   - `Secret key` (`sb_secret_...`) **disarankan untuk project baru**, atau legacy `service_role` bila project lama masih menggunakannya.
+`Error` sengaja dipakai daripada memberi hasil palsu.
 
-Masukkan key server tersebut ke variable `SUPABASE_SERVICE_ROLE_KEY`. Nama variable tetap sama agar kode tidak perlu diubah. Jangan taruh key ini di browser/GitHub.
+---
 
-## 3. Upload Project ke GitHub
+## Update dari v1/v2
 
-Upload seluruh isi folder ini ke repository GitHub, lalu Import repository
-tersebut di Vercel.
+### 1. Ganti semua file repository dengan isi ZIP v3
 
-Tidak perlu framework Next.js. Folder `api/` otomatis menjadi Vercel Functions.
+Hapus file lama seperti:
 
-## 4. Environment Variables di Vercel
+```text
+api/session-test.js
+lib/browser-checker.js
+```
 
-Isi:
+v3 memakai:
+
+```text
+api/engine-test.js
+lib/public-checker.js
+```
+
+### 2. Jalankan migration Supabase
+
+Jika tabel lama sudah ada, cukup jalankan:
+
+```sql
+alter table public.gemini_checker_items add column if not exists engine text;
+alter table public.gemini_checker_items add column if not exists confidence text;
+alter table public.gemini_checker_items add column if not exists evidence jsonb;
+
+NOTIFY pgrst, 'reload schema';
+```
+
+Project baru: jalankan seluruh `supabase.sql`.
+
+### 3. Hapus Environment Variable cookie lama
+
+Di Vercel, hapus bila ada:
+
+```text
+GOOGLE_CHECKER_COOKIE_HEADER
+GOOGLE_CHECKER_COOKIES_B64
+CHECKER_ACCOUNT_IS_FRESH
+```
+
+Variable yang diperlukan:
 
 ```text
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_WEBHOOK_SECRET=
 WEBHOOK_SETUP_KEY=
-PUBLIC_BASE_URL=https://NAMA-PROJECT.vercel.app
-
+PUBLIC_BASE_URL=
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 
 MAX_LINKS_PER_REQUEST=100
-CHECK_CONCURRENCY=5
-CHECK_TIMEOUT_MS=10000
+CHECK_CONCURRENCY=4
+CHECK_TIMEOUT_MS=18000
+CHECK_SETTLE_MS=1400
+EXPECTED_REFERRAL_MONTHS=4
+AMBIGUOUS_UNAVAILABLE_AS_USED=false
 SAVE_RAW_LINKS=false
-ALLOWED_HOST_SUFFIXES=google.com,g.co,goo.gle
 ```
 
-`TELEGRAM_WEBHOOK_SECRET` dan `WEBHOOK_SETUP_KEY` isi dengan dua teks acak
-yang panjang dan berbeda.
-
-Contoh:
-```text
-TELEGRAM_WEBHOOK_SECRET=GmChk_7fB3_yang_panjang_dan_acak
-WEBHOOK_SETUP_KEY=Setup_91Ab_yang_berbeda_dan_acak
-```
-
-## 5. Deploy
-
-Setelah env tersimpan, lakukan **Redeploy**.
-
-Cek:
-```text
-https://NAMA-PROJECT.vercel.app/api/health
-```
-
-Harus membalas JSON dengan `"ok": true`.
-
-## 6. Pasang Webhook Telegram
-
-Buka di browser:
+Optional:
 
 ```text
-https://NAMA-PROJECT.vercel.app/api/setup-webhook?key=ISI_WEBHOOK_SETUP_KEY
+CHROMIUM_PACK_URL=
 ```
 
-Jika berhasil:
+Kosongkan agar bot mengambil Chromium 149 pack resmi Sparticuz saat cold start.
+
+### 4. Redeploy Vercel
+
+Setelah deploy, cek:
+
+```text
+https://DOMAIN-VERCEL/api/health
+```
+
+Harus ada:
+
 ```json
 {
   "ok": true,
-  "webhook": "https://NAMA-PROJECT.vercel.app/api/telegram"
+  "engine": "3.0-public-evidence",
+  "googleCookieRequired": false
 }
 ```
 
-## 7. Tes
+### 5. Tes Chromium
 
-Buka bot Telegram dan kirim:
+Buka:
+
+```text
+https://DOMAIN-VERCEL/api/engine-test?key=WEBHOOK_SETUP_KEY_KAMU
+```
+
+Jika berhasil:
+
+```json
+{
+  "ok": true,
+  "engine": "3.0-public-evidence",
+  "reason": "Chromium anonim berhasil dijalankan; cookie/login Google tidak diperlukan"
+}
+```
+
+### 6. Pasang webhook lagi
+
+```text
+https://DOMAIN-VERCEL/api/setup-webhook?key=WEBHOOK_SETUP_KEY_KAMU
+```
+
+Kemudian Telegram:
 
 ```text
 /start
+/engine
 ```
 
-Kemudian kirim link atau file `.txt`.
+---
 
-## Database
+## Debug link
 
-Tabel yang dibuat memakai prefix `gemini_checker_` supaya tidak bentrok
-dengan tabel project lain:
-
-- `gemini_checker_users`
-- `gemini_checker_checks`
-- `gemini_checker_items`
-
-Default `SAVE_RAW_LINKS=false`, sehingga link asli tidak disimpan di database.
-Yang disimpan adalah SHA-256 hash + hasil status. Bila memang ingin menyimpan
-link mentah untuk audit, ubah menjadi:
+Kirim:
 
 ```text
-SAVE_RAW_LINKS=true
+/debug https://g.co/g1referral/XXXXXXXX
 ```
 
-## Batas batch
-
-Default maksimal 100 link per kiriman dengan concurrency 5.
-Webhook memberi HTTP 200 ke Telegram segera, lalu proses checker diteruskan
-dengan `waitUntil()` Vercel sampai selesai (tetap terikat batas `maxDuration`).
-
-Jika Google mulai rate-limit:
-- turunkan `CHECK_CONCURRENCY` ke 2–3;
-- naikkan `CHECK_TIMEOUT_MS` bila perlu;
-- jangan mengirim batch yang sama berkali-kali dalam waktu singkat.
-
-## Menambah host partner resmi
-
-Demi keamanan, bot menolak host di luar allowlist.
-Jika suatu redeem link resmi berasal dari partner lalu redirect ke Google,
-tambahkan domain partner tersebut ke:
+Contoh hasil:
 
 ```text
-ALLOWED_HOST_SUFFIXES=google.com,g.co,goo.gle,partner.example
+1. ERROR XXXXXXXX · high
+   Google mengatakan original offer tidak tersedia, tetapi sinyal ini ambigu; bot tidak menebak
+   Signals: original_offer_unavailable, generic_fallback_plan
 ```
 
-Hanya tambahkan domain yang benar-benar dipercaya.
+`/debug` tidak menampilkan cookie karena v3 memang tidak memakai cookie.
 
-## Kalibrasi status
+---
 
-Bagian marker terdapat di:
+## Tentang akurasi
+
+Google tidak menyediakan public API resmi yang terdokumentasi untuk mengembalikan status referral
+`valid / used / expired` tanpa konteks akun. Karena itu **tidak mungkin secara jujur menjamin 100% semua link dapat dibedakan tanpa login**.
+
+v3 dibuat agar perilakunya benar:
+
+- tidak lagi menganggap redirect login = Valid;
+- tidak menganggap pesan eligibility akun = Used;
+- memakai `Used/Expired/Invalid/Valid` hanya bila ada bukti publik;
+- bila Google menyembunyikan statusnya, bot mengembalikan `Error` daripada mengarang hasil.
+
+Jika sebuah link yang status aslinya sudah diketahui masih masuk `Error`, gunakan `/debug` dan lihat `Signals`.
+Rule bisa diperbarui saat Google mengubah response publiknya tanpa perlu kembali memakai cookie akun.
+
+## Optional: mode agresif Used
+
+Jika Anda memang ingin perilaku lebih mirip checker yang menganggap `original offer isn't available` sebagai link habis, set:
 
 ```text
-lib/checker.js
+AMBIGUOUS_UNAVAILABLE_AS_USED=true
 ```
 
-Array:
-- `USED_PATTERNS`
-- `EXPIRED_PATTERNS`
-- `INVALID_PATTERNS`
-- `VALID_PATTERNS`
-
-Setelah punya contoh nyata:
-- 1 link valid,
-- 1 link sudah dipakai,
-- 1 link expired,
-
-marker bisa disesuaikan agar hasil checker makin mendekati bot referensi.
+Mode ini dapat menambah jumlah `Used`, tetapi akurasinya lebih rendah karena Google pernah menampilkan pesan yang sama pada pengguna yang sebenarnya masih memenuhi syarat. Untuk hasil yang paling aman, biarkan `false`.

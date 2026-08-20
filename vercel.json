@@ -5,6 +5,9 @@
     },
     "api/setup-webhook.js": {
       "maxDuration": 60
+    },
+    "api/engine-test.js": {
+      "maxDuration": 120
     }
   }
 }
