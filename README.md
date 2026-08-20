@@ -1,4 +1,4 @@
-# Gemini Checker v4.4 — Hobby Edition
+# Gemini Checker v4.5 — Hobby Edition
 
 ## PENTING: hapus file lama sebelum upload
 
@@ -437,3 +437,46 @@ AWS_LAMBDA_JS_RUNTIME=nodejs22.x
 
 hapus variable tersebut agar tidak menimbulkan konfigurasi runtime yang
 membingungkan. Vercel Functions akan menggunakan Node 24.x dari project/package.
+
+
+## Perbaikan v4.5 — Node 24 + Teleproto ESM
+
+Node.js 24 tidak menerima directory import:
+
+```js
+import("teleproto/sessions")
+```
+
+v4.5 menggunakan path ESM eksplisit:
+
+```js
+import("teleproto/sessions/index.js")
+```
+
+Ini memperbaiki error Vercel:
+
+```text
+Directory import '/var/task/node_modules/teleproto/sessions' is not supported
+Did you mean to import "teleproto/sessions/index.js"?
+```
+
+Setelah upload v4.5 dan deploy, tes:
+
+```text
+/api/runtime-test?key=WEBHOOK_SETUP_KEY
+```
+
+Target:
+
+```json
+{
+  "ok": true,
+  "engine": "4.5-userbot-bridge-hobby",
+  "teleprotoImport": true,
+  "exports": {
+    "TelegramClient": true,
+    "Api": true,
+    "StringSession": true
+  }
+}
+```

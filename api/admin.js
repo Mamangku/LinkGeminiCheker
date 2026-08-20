@@ -28,7 +28,7 @@ function requireKey(req, res) {
 async function handleHealth(req, res) {
   return res.status(200).json({
     ok: true,
-    engine: "4.4-userbot-bridge-hobby",
+    engine: "4.5-userbot-bridge-hobby",
     serverlessFunctions: 4,
     userbotSessionConfigured: Boolean(process.env.TELEGRAM_USER_SESSION),
     apiIdConfigured: Boolean(process.env.TELEGRAM_API_ID),
@@ -68,7 +68,7 @@ async function handleConfig(req, res) {
 
   return res.status(missingOrInvalid.length ? 500 : 200).json({
     ok: missingOrInvalid.length === 0,
-    engine: "4.4-userbot-bridge-hobby",
+    engine: "4.5-userbot-bridge-hobby",
     checks,
     missingOrInvalid,
     note:
@@ -85,7 +85,7 @@ async function handleRuntime(req, res) {
 
     return res.status(200).json({
       ok: true,
-      engine: "4.4-userbot-bridge-hobby",
+      engine: "4.5-userbot-bridge-hobby",
       apiCredentialsReadable: Boolean(apiId && apiHash),
       teleprotoImport: true,
       exports: {
@@ -98,7 +98,7 @@ async function handleRuntime(req, res) {
   } catch (error) {
     return res.status(500).json({
       ok: false,
-      engine: "4.4-userbot-bridge-hobby",
+      engine: "4.5-userbot-bridge-hobby",
       stage: "teleproto_runtime",
       error: error?.message || String(error)
     });
@@ -119,7 +119,7 @@ async function handleUserbotTest(req, res) {
 
     return res.status(200).json({
       ok: true,
-      engine: "4.4-userbot-bridge-hobby",
+      engine: "4.5-userbot-bridge-hobby",
       account: {
         id: String(me?.id || ""),
         username: me?.username || null,
@@ -134,7 +134,7 @@ async function handleUserbotTest(req, res) {
   } catch (error) {
     return res.status(500).json({
       ok: false,
-      engine: "4.4-userbot-bridge-hobby",
+      engine: "4.5-userbot-bridge-hobby",
       error: error?.message || String(error)
     });
   } finally {
@@ -156,7 +156,7 @@ async function handleGoCheckerTest(req, res) {
     return res.status(result.ok ? 200 : 504).json({
       ...result,
       target: `@${targetUsername()}`,
-      engine: "4.4-userbot-bridge-hobby"
+      engine: "4.5-userbot-bridge-hobby"
     });
   } catch (error) {
     return res.status(500).json({
