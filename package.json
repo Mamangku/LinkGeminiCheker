@@ -1,0 +1,16 @@
+{
+  "name": "gemini-redeem-checker-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
+    "@vercel/functions": "^3.9.3"
+  }
+}
