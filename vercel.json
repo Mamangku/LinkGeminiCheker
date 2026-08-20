@@ -1,13 +1,22 @@
 {
   "functions": {
     "api/telegram.js": {
-      "maxDuration": 300
-    },
-    "api/setup-webhook.js": {
       "maxDuration": 60
     },
-    "api/engine-test.js": {
-      "maxDuration": 120
+    "api/bridge-worker.js": {
+      "maxDuration": 300
+    },
+    "api/userbot-login-start.js": {
+      "maxDuration": 60
+    },
+    "api/userbot-login-verify.js": {
+      "maxDuration": 60
+    },
+    "api/userbot-test.js": {
+      "maxDuration": 60
+    },
+    "api/gochecker-test.js": {
+      "maxDuration": 90
     }
   }
 }

@@ -1,11 +1,11 @@
-import { ENGINE_VERSION } from "../lib/public-checker.js";
-
 export default function handler(req, res) {
   res.status(200).json({
     ok: true,
-    service: "gemini-redeem-checker-bot",
-    engine: ENGINE_VERSION,
-    googleCookieRequired: false,
+    engine: "4.0-userbot-bridge",
+    userbotSessionConfigured: Boolean(process.env.TELEGRAM_USER_SESSION),
+    apiIdConfigured: Boolean(process.env.TELEGRAM_API_ID),
+    apiHashConfigured: Boolean(process.env.TELEGRAM_API_HASH),
+    target: `@${String(process.env.GOCHECKER_USERNAME || "GoChecker_Bot").replace(/^@/, "")}`,
     time: new Date().toISOString()
   });
 }

@@ -1,6 +1,6 @@
 {
-  "name": "gemini-redeem-checker-bot",
-  "version": "3.2.0",
+  "name": "gemini-checker-v4-userbot-bridge",
+  "version": "4.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,9 +11,8 @@
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {
-    "@sparticuz/chromium-min": "149.0.0",
     "@supabase/supabase-js": "^2.112.3",
     "@vercel/functions": "^3.9.3",
-    "puppeteer-core": "25.1.0"
+    "teleproto": "^1.228.5"
   }
 }
