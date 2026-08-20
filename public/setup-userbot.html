@@ -62,6 +62,19 @@ let loginId = "";
 const $ = id => document.getElementById(id);
 const pretty = value => JSON.stringify(value, null, 2);
 
+async function readApiResponse(res) {
+  const raw = await res.text();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {
+      ok: false,
+      httpStatus: res.status,
+      error: raw || `Server mengembalikan HTTP ${res.status} tanpa JSON.`
+    };
+  }
+}
+
 $("sendCode").onclick = async () => {
   $("startResult").textContent = "Mengirim kode...";
   try {
@@ -73,7 +86,7 @@ $("sendCode").onclick = async () => {
         phone: $("phone").value
       })
     });
-    const data = await res.json();
+    const data = await readApiResponse(res);
     $("startResult").textContent = pretty(data);
     if (data.ok && data.loginId) {
       loginId = data.loginId;
@@ -97,7 +110,7 @@ $("verify").onclick = async () => {
         password: $("password").value
       })
     });
-    const data = await res.json();
+    const data = await readApiResponse(res);
 
     // Jangan tampilkan session dua kali di pre.
     const safe = {...data};

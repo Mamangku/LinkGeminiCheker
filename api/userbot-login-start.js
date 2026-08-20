@@ -25,10 +25,12 @@ export default async function handler(req, res) {
     });
   }
 
-  const { apiId, apiHash } = apiCredentials();
-  const client = makeUserClient("");
+  let client;
 
   try {
+    const { apiId, apiHash } = apiCredentials();
+    client = makeUserClient("");
+
     await client.connect();
 
     const result = await client.sendCode(
@@ -70,6 +72,6 @@ export default async function handler(req, res) {
       error: error.errorMessage || error.message || String(error)
     });
   } finally {
-    try { await client.disconnect(); } catch {}
+    try { if (client) await client.disconnect(); } catch {}
   }
 }

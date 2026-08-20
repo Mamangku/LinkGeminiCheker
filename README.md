@@ -1,4 +1,4 @@
-# Gemini Checker v4 — Userbot Bridge
+# Gemini Checker v4.1 — Userbot Bridge
 
 Versi ini **tidak mengecek Google sendiri**.
 
@@ -307,3 +307,34 @@ user A dan user B tidak tertukar.
 `waitUntil()`. Claim job di Supabase memakai advisory lock dan hanya mengizinkan
 satu job `processing` dalam satu waktu. Ini sengaja untuk mencegah balasan
 GoChecker milik dua user tertukar.
+
+
+## Jika setup-userbot menampilkan "A server error occurred"
+
+v4.1 memperbaiki error handler halaman login. Sebelum login, buka:
+
+```text
+https://DOMAIN/api/config-test?key=WEBHOOK_SETUP_KEY_ANDA
+```
+
+Semua check harus `true`.
+
+Contoh:
+
+```json
+{
+  "ok": true,
+  "checks": {
+    "TELEGRAM_API_ID": true,
+    "TELEGRAM_API_HASH": true,
+    "SUPABASE_URL": true,
+    "SUPABASE_SERVICE_ROLE_KEY": true,
+    "PUBLIC_BASE_URL": true,
+    "BRIDGE_WORKER_SECRET": true
+  },
+  "missingOrInvalid": []
+}
+```
+
+Setelah mengubah Environment Variables Vercel, selalu lakukan Redeploy karena
+deployment yang sudah berjalan tidak otomatis memperoleh nilai environment baru.

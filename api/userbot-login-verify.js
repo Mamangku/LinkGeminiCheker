@@ -49,10 +49,12 @@ export default async function handler(req, res) {
     });
   }
 
-  const { apiId, apiHash } = apiCredentials();
-  const client = makeUserClient(row.temp_session);
+  let client;
 
   try {
+    const { apiId, apiHash } = apiCredentials();
+    client = makeUserClient(row.temp_session);
+
     await client.connect();
 
     if (row.needs_2fa) {
@@ -149,6 +151,6 @@ export default async function handler(req, res) {
       error: error.errorMessage || error.message || String(error)
     });
   } finally {
-    try { await client.disconnect(); } catch {}
+    try { if (client) await client.disconnect(); } catch {}
   }
 }
