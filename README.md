@@ -1,4 +1,4 @@
-# Gemini Checker v4.1 — Userbot Bridge
+# Gemini Checker v4.2 — Userbot Bridge
 
 Versi ini **tidak mengecek Google sendiri**.
 
@@ -338,3 +338,33 @@ Contoh:
 
 Setelah mengubah Environment Variables Vercel, selalu lakukan Redeploy karena
 deployment yang sudah berjalan tidak otomatis memperoleh nilai environment baru.
+
+
+## Diagnostik v4.2
+
+v4.2 memuat `teleproto` secara lazy/dinamis agar kegagalan import di Vercel
+tidak lagi berubah menjadi `FUNCTION_INVOCATION_FAILED` tanpa penjelasan.
+
+Urutan tes:
+
+```text
+/api/config-test?key=WEBHOOK_SETUP_KEY
+/api/runtime-test?key=WEBHOOK_SETUP_KEY
+/setup-userbot.html
+```
+
+`runtime-test` harus memberikan:
+
+```json
+{
+  "ok": true,
+  "teleprotoImport": true,
+  "exports": {
+    "TelegramClient": true,
+    "Api": true,
+    "StringSession": true
+  }
+}
+```
+
+Jika gagal, JSON akan menampilkan error runtime MTProto yang sebenarnya.

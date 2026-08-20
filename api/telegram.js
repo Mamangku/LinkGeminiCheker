@@ -69,7 +69,7 @@ async function handleMessage(message) {
       "Kirim satu/banyak link atau file <b>.txt</b>.",
       "Checker menggunakan akun Telegram bridge untuk meminta hasil dari checker tujuan.",
       "",
-      "Engine: <code>4.0-userbot-bridge</code>"
+      "Engine: <code>4.2-userbot-bridge</code>"
     ].join("\n"));
     return;
   }
@@ -77,7 +77,7 @@ async function handleMessage(message) {
   if (/^\/engine(?:@\w+)?$/i.test(text)) {
     await sendMessage(
       chatId,
-      "⚙️ Engine aktif: <code>4.0-userbot-bridge</code>"
+      "⚙️ Engine aktif: <code>4.2-userbot-bridge</code>"
     );
     return;
   }
@@ -164,7 +164,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       service: "telegram-webhook",
-      engine: "4.0-userbot-bridge"
+      engine: "4.2-userbot-bridge"
     });
   }
 

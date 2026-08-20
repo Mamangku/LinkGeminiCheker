@@ -1,6 +1,5 @@
-import { Api } from "teleproto";
 import { getSupabase } from "../lib/supabase.js";
-import { makeUserClient, apiCredentials } from "../lib/userbot.js";
+import { makeUserClient, apiCredentials, getTeleprotoRuntime } from "../lib/userbot.js";
 
 function checkKey(req) {
   const expected = String(process.env.WEBHOOK_SETUP_KEY || "");
@@ -53,7 +52,7 @@ export default async function handler(req, res) {
 
   try {
     const { apiId, apiHash } = apiCredentials();
-    client = makeUserClient(row.temp_session);
+    client = await makeUserClient(row.temp_session);
 
     await client.connect();
 
@@ -82,6 +81,8 @@ export default async function handler(req, res) {
       }
 
       try {
+        const { Api } = await getTeleprotoRuntime();
+
         const result = await client.invoke(
           new Api.auth.SignIn({
             phoneNumber: row.phone,

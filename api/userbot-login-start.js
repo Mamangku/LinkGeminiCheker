@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
   try {
     const { apiId, apiHash } = apiCredentials();
-    client = makeUserClient("");
+    client = await makeUserClient("");
 
     await client.connect();
 
