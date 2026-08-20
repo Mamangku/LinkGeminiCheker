@@ -1,3 +1,21 @@
+# Gemini Redeem Checker Bot v3.2
+
+v3.2 menambahkan dukungan resmi untuk dua keluarga URL Google:
+
+- `https://g.co/g1referral/...`
+- `https://one.google.com/referral/redeem/...`
+- `https://serviceactivation.google.com/subscription/new/<user_session_token>`
+- `https://serviceactivation.google.com/subscription/entitle/<user_session_token>`
+
+`serviceactivation` adalah Google Managed Signup / Payments Reseller Subscription.
+Token diperlakukan sebagai opaque user-session token; bot tidak mencoba mendekode,
+mengubah, atau melakukan redeem.
+
+**Penting:** status `Used` untuk serviceactivation hanya diberikan jika respons
+Google sendiri mengandung bukti bahwa subscription/session sudah diaktivasi atau
+digunakan. Jika Google meminta login sebelum status dapat diketahui, hasilnya
+`Error`, bukan `Invalid` atau `Valid` palsu.
+
 # Gemini Redeem Checker Bot v3.0 — Public Evidence Engine
 
 Telegram bot untuk mengecek link Google AI Pro / Google One referral dengan **Vercel + Supabase saja**.

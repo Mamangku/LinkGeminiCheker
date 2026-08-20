@@ -120,7 +120,7 @@ async function handleMessage(message) {
     await sendMessage(chatId, [
       "👋 <b>Gemini Redeem Link Checker</b>",
       "",
-      "Kirim satu/banyak link referral Gemini atau file <b>.txt</b>.",
+      "Kirim link Gemini referral atau Google serviceactivation, satu/banyak sekaligus, atau file <b>.txt</b>.",
       "Bot memakai HTTP + Chromium anonim dan <b>tidak login, tidak memakai cookie, dan tidak melakukan redeem</b>.",
       "",
       `Engine: <code>${ENGINE_VERSION}</code>`
@@ -149,7 +149,7 @@ async function handleMessage(message) {
   const { maxLinks } = getLimits();
   const links = extractLinks(input.text);
   if (!links.length) {
-    await sendMessage(chatId, "❌ Tidak menemukan link referral Gemini/Google One yang dapat diperiksa.");
+    await sendMessage(chatId, "❌ Tidak menemukan link Gemini/Google serviceactivation yang dapat diperiksa.");
     return;
   }
   if (links.length > maxLinks) {
@@ -158,7 +158,7 @@ async function handleMessage(message) {
   }
 
   await upsertUser(from);
-  const progress = await sendMessage(chatId, `🔎 <b>Checking ${links.length} Links...</b>\nEngine v3 sedang membaca bukti publik Google.`);
+  const progress = await sendMessage(chatId, `🔎 <b>Checking ${links.length} Links...</b>\nEngine v3.2 sedang membaca bukti publik Google tanpa melakukan redeem.`);
 
   const started = Date.now();
   const results = await checkRedeemLinks(links);
