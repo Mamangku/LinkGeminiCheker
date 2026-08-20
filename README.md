@@ -25,8 +25,10 @@ host Google yang diizinkan, lalu membaca marker respons.
 
 Karena sebagian status Google baru bisa diketahui setelah login,
 `Used` / `Expired` hanya bisa dipastikan bila marker tersebut memang
-muncul pada respons yang dapat dibaca server. Status `Valid` pada link yang
-mengarah ke login Google bersifat **heuristik: link offer masih reachable**.
+muncul pada respons yang dapat dibaca server. Versi strict ini **tidak lagi**
+menganggap redirect ke login Google sebagai `Valid`. Jika Google meminta login
+sebelum mengungkap status offer, hasilnya menjadi `Error` agar tidak menghasilkan
+`Valid` palsu.
 
 ## 1. Buat Bot Telegram
 
