@@ -1,4 +1,4 @@
-# Gemini Checker v4.2 — Userbot Bridge
+# Gemini Checker v4.3 — Userbot Bridge
 
 Versi ini **tidak mengecek Google sendiri**.
 
@@ -368,3 +368,26 @@ Urutan tes:
 ```
 
 Jika gagal, JSON akan menampilkan error runtime MTProto yang sebenarnya.
+
+
+## Runtime v4.3
+
+v4.3 menyamakan runtime project dengan Vercel:
+
+```json
+"engines": {
+  "node": "24.x"
+}
+```
+
+Jika Vercel Project Settings juga memakai Node.js 24.x, warning bahwa
+`package.json` mengoverride Node 24.x dengan Node 22.x tidak akan muncul lagi.
+
+Jika sebelumnya ada Environment Variable:
+
+```text
+AWS_LAMBDA_JS_RUNTIME=nodejs22.x
+```
+
+hapus variable tersebut agar tidak menimbulkan konfigurasi runtime yang
+membingungkan. Vercel Functions akan menggunakan Node 24.x dari project/package.

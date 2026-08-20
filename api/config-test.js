@@ -36,7 +36,7 @@ export default function handler(req, res) {
 
   return res.status(missingOrInvalid.length ? 500 : 200).json({
     ok: missingOrInvalid.length === 0,
-    engine: "4.1-userbot-bridge",
+    engine: "4.3-userbot-bridge",
     checks,
     missingOrInvalid,
     note:

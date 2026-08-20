@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      engine: "4.2-userbot-bridge",
+      engine: "4.3-userbot-bridge",
       apiCredentialsReadable: Boolean(apiId && apiHash),
       teleprotoImport: true,
       exports: {
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({
       ok: false,
-      engine: "4.2-userbot-bridge",
+      engine: "4.3-userbot-bridge",
       stage: "teleproto_runtime",
       error: error?.message || String(error)
     });

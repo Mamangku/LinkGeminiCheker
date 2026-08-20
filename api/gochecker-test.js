@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     return res.status(result.ok ? 200 : 504).json({
       ...result,
       target: `@${targetUsername()}`,
-      engine: "4.2-userbot-bridge"
+      engine: "4.3-userbot-bridge"
     });
   } catch (error) {
     return res.status(500).json({

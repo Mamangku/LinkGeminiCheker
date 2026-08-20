@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      engine: "4.2-userbot-bridge",
+      engine: "4.3-userbot-bridge",
       account: {
         id: String(me?.id || ""),
         username: me?.username || null,
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({
       ok: false,
-      engine: "4.2-userbot-bridge",
+      engine: "4.3-userbot-bridge",
       error: error.message
     });
   } finally {
