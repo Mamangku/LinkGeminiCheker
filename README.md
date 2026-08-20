@@ -1,3 +1,49 @@
+# Gemini Checker v4.4 — Hobby Edition
+
+## PENTING: hapus file lama sebelum upload
+
+Vercel Hobby hanya menerima maksimal 12 Serverless Functions per deployment.
+
+v4.4 hanya mempunyai **4 function**:
+
+```text
+api/admin.js
+api/userbot-auth.js
+api/telegram.js
+api/bridge-worker.js
+```
+
+Endpoint lama tetap tersedia melalui `vercel.json` rewrites.
+
+Jika repository GitHub Anda masih menyimpan file API versi lama seperti:
+
+```text
+api/health.js
+api/config-test.js
+api/runtime-test.js
+api/userbot-test.js
+api/gochecker-test.js
+api/setup-webhook.js
+api/kick-worker.js
+api/userbot-login-start.js
+api/userbot-login-verify.js
+api/engine-test.js
+api/session-test.js
+api/test-gochecker.js
+```
+
+**hapus file-file tersebut.**
+
+Cara paling aman:
+1. Hapus seluruh isi repository lama (jangan hapus repository-nya).
+2. Upload seluruh isi ZIP v4.4.
+3. Commit.
+4. Vercel deploy ulang.
+
+Jangan hanya menambahkan file v4.4 di atas file lama, karena function lama akan
+tetap dihitung oleh Vercel.
+
+
 # Gemini Checker v4.3 — Userbot Bridge
 
 Versi ini **tidak mengecek Google sendiri**.

@@ -109,7 +109,7 @@ async function processOneJob(job) {
 
     const storedResult = {
       ...result.summary,
-      bridge: "4.3-userbot-bridge",
+      bridge: "4.4-userbot-bridge-hobby",
       target: `@${targetUsername()}`,
       transport: sent.mode,
       source_reply: saveSource ? result.sourceText : null
@@ -205,6 +205,6 @@ export default async function handler(req, res) {
   return res.status(202).json({
     ok: true,
     accepted: true,
-    engine: "4.3-userbot-bridge"
+    engine: "4.4-userbot-bridge-hobby"
   });
 }
