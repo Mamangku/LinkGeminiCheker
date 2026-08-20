@@ -123,7 +123,7 @@ Harus ada:
 ```json
 {
   "ok": true,
-  "engine": "3.0-public-evidence",
+  "engine": "3.1-public-evidence",
   "googleCookieRequired": false
 }
 ```
@@ -141,7 +141,7 @@ Jika berhasil:
 ```json
 {
   "ok": true,
-  "engine": "3.0-public-evidence",
+  "engine": "3.1-public-evidence",
   "reason": "Chromium anonim berhasil dijalankan; cookie/login Google tidak diperlukan"
 }
 ```
@@ -205,3 +205,11 @@ AMBIGUOUS_UNAVAILABLE_AS_USED=true
 ```
 
 Mode ini dapat menambah jumlah `Used`, tetapi akurasinya lebih rendah karena Google pernah menampilkan pesan yang sama pada pengguna yang sebenarnya masih memenuhi syarat. Untuk hasil yang paling aman, biarkan `false`.
+
+
+## v3.1 Chromium fix
+
+- Tidak lagi membuat `browser.createBrowserContext()` pada Vercel/serverless.
+- Menggunakan `browser.defaultBrowserContext()` untuk menghindari `Target.createTarget: Target closed`.
+- Menggunakan `await puppeteer.defaultArgs(...)` sesuai Puppeteer/Chromium 149.
+- `CHROMIUM_PACK_URL` tetap opsional; default mengunduh pack resmi Sparticuz.
